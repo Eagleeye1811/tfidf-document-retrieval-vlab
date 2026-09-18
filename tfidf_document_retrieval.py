@@ -46,7 +46,11 @@ EXPERIMENT_CONFIG = {
 }
 
 THEORY_CONTENT = {
-    "background": r"""
+    # Rendered as an ordered sequence of blocks: ("md", markdown) or ("latex", formula).
+    # Display equations go through st.latex() - a multi-line $$...$$ inside st.markdown()
+    # is not closed by KaTeX and swallows all following text.
+    "background_blocks": [
+        ("md", r"""
 ### Overview & Principles
 
 Classical (pre-neural) information retrieval treats every document and every query as a
@@ -72,16 +76,17 @@ carries little discriminating power, so its weight is damped:
 - Probabilistic: $\mathrm{idf}_t = \max\!\left(0,\ \log_{10}\dfrac{N-\mathrm{df}_t}{\mathrm{df}_t}\right)$
 
 **3. TF-IDF weight** — the product of the two effects:
-
-$$w_{t,d} = \mathrm{tf}_{t,d} \times \mathrm{idf}_t$$
-
+        """),
+        ("latex", r"w_{t,d} = \mathrm{tf}_{t,d} \times \mathrm{idf}_t"),
+        ("md", r"""
 A weight is large only when a term is *frequent in this document* **and** *rare in the collection*.
 
 **4. Similarity** — with $\vec{q}$ the query vector and $\vec{d}$ a document vector:
-
-$$\cos(\vec{q}, \vec{d}) = \frac{\vec{q} \cdot \vec{d}}{\lVert \vec{q} \rVert \, \lVert \vec{d} \rVert}
-= \sum_t \hat{q}_t \hat{d}_t$$
-
+        """),
+        ("latex", r"\cos(\vec{q}, \vec{d}) = \frac{\vec{q} \cdot \vec{d}}"
+                  r"{\lVert \vec{q} \rVert \, \lVert \vec{d} \rVert}"
+                  r" = \sum_t \hat{q}_t \hat{d}_t"),
+        ("md", r"""
 The cosine ignores vector *length*, so a 20-word abstract and a 2000-word article are compared
 on **composition** rather than size. An unnormalised dot product, by contrast, is strongly biased
 toward long documents — an effect you can switch on and off in the simulation.
@@ -93,7 +98,8 @@ toward long documents — an effect you can switch on and off in the simulation.
 4. **Query Processing**: embed the query in the *same* term space using the *corpus* IDF values.
 5. **Scoring & Ranking**: compute similarity of the query against every document and sort descending.
 6. **Evaluation**: judge the ranked list with Precision@K, Recall@K and Average Precision.
-    """,
+        """),
+    ],
     "procedure": [
         "Step 1: Read the theory, note the TF, IDF and cosine-similarity definitions.",
         "Step 2: Open the Simulation section from the sidebar navigator.",
@@ -713,7 +719,11 @@ def generate_pdf_report(student_name: str, student_id: str, date_str: str,
 def render_theory_section():
     """Section 1: Theory, background, objectives, procedure, terminology."""
     st.header("Theoretical Framework & Background")
-    st.markdown(THEORY_CONTENT["background"])
+    for kind, content in THEORY_CONTENT["background_blocks"]:
+        if kind == "latex":
+            st.latex(content)
+        else:
+            st.markdown(content)
 
     st.subheader("Learning Objectives")
     for i, obj in enumerate(EXPERIMENT_CONFIG["objectives"]):
